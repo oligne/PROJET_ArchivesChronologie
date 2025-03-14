@@ -19,9 +19,13 @@
     .backgroundColor('#1c1919')
     .nodeAutoColorBy('extension')
     .forceEngine('d3')
-    .d3Force('charge').strength(-10)
-    .d3Force('center', null)
-    .d3Force('link', null);
+    // .d3Force('charge').strength(-10)
+    // .d3Force('center', null)
+    // .d3Force('link', null);
+  .d3Force('charge', d3.forceManyBody().strength(-10))
+  .d3Force('center', d3.forceCenter())
+  .d3Force('link', d3.forceLink().id(d => d.id));
+
 
   fetch('data.json')
     .then(response => response.json())
