@@ -1,142 +1,61 @@
-<!DOCTYPE html>
-<html lang="fr">
+<script src="https://unpkg.com/3d-force-graph"></script>
+<script src="https://d3js.org/d3.v6.min.js"></script>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Graphique 3D</title>
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-    }
+<div class="control-panel">
+    <label for="dataRange">Taille du graphe :</label>
+    <input type="range" id="dataRange" min="5" max="100" value="20" step="5">
+    <span id="dataPercentage">20%</span>
+</div>
 
-    #3d-graph {
-      width: 100%;
-      height: 100%;
-    }
+<!-- Conteneur du graph -->
+<div id="3d-graph"></div>
 
-    /* Style du slider */
-    .control-panel {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 10;
-      background: rgba(255, 255, 255, 0.8);
-      padding: 10px;
-      border-radius: 5px;
-    }
-  </style>
+<script>
+  const slider = document.getElementById('dataRange');
+  const percentageDisplay = document.getElementById('dataPercentage');
+  const elem = document.getElementById('3d-graph');
+  let fullGraph = null;
+  let graph = ForceGraph3D()(elem)
+    .backgroundColor('#1c1919')
+    .nodeAutoColorBy('extension')
+    .forceEngine('d3')
+    .d3Force('charge').strength(-10)
+    .d3Force('center', null)
+    .d3Force('link', null);
 
-    <script src="https://unpkg.com/3d-force-graph"></script>
-    <script src="https://d3js.org/d3.v6.min.js"></script>
-
-</head>
-
-<body>
-
-
-    <div class="control-panel">
-     <label for="dataRange">Taille du graphe :</label>
-     <input type="range" id="dataRange" min="5" max="100" value="20" step="5">
-     <span id="dataPercentage">20%</span>
-    </div>
-
-    <!-- Conteneur du graph -->
-    <div id="3d-graph"></div>
-
-    <script>
-
-        const slider = document.getElementById('dataRange');
-        const percentageDisplay = document.getElementById('dataPercentage');
-        const elem = document.getElementById('3d-graph');
-        let fullGraph = null;
-  
-        // Charger les données JSON
-        fetch('data.json')
-      .then(response => response.json())
-      .then(data => {
-        fullGraph = data;
-        updateGraph();
-      })
-      .catch(error => console.error('Erreur lors du chargement du fichier JSON :', error));
-
-    function updateGraph() {
-      if (!fullGraph) return;
-
-      const excludedWords = ["fluid", "config", "cache", "twitter"]; 
-      const sampleSize = slider.value / 100; // Convertit en fraction (ex: 20% => 0.2)
-      percentageDisplay.textContent = `${slider.value}%`;
-
-      // Mélange les nœuds et en sélectionne un pourcentage
-      const filteredNodes = fullGraph.nodes
-        .sort(() => 0.01 - Math.random()) // Mélange aléatoire
-        .slice(0, Math.ceil(fullGraph.nodes.length * sampleSize))
-        .filter(node => !excludedWords.some(word => node.id.toLowerCase().includes(word))); // Exclut certains mots
-
-
-      // Conserver uniquement les liens connectés aux nœuds visibles
-      const filteredLinks = fullGraph.links.filter(link =>
-        filteredNodes.some(node => node.id === link.source) &&
-        filteredNodes.some(node => node.id === link.target)
-      );
-
-      graph.graphData({ nodes: filteredNodes, links: filteredLinks });
-
-      // Échelle pour positionner les fichiers selon l'année
-      const years = data.nodes.map(n => n.year).filter(y => y);
+  fetch('data.json')
+    .then(response => response.json())
+    .then(data => {
+      fullGraph = data;
+      const years = fullGraph.nodes.map(n => n.year).filter(y => y);
       const xScale = d3.scaleLinear().domain([Math.min(...years), Math.max(...years)]).range([-500, 500]);
-
-      // Fonction pour une dispersion organique en Y et Z
       const randomOffset = (strength) => (Math.random() - 0.5) * strength;
 
-
-      // Appliquer les positions initiales
-      data.nodes.forEach(node => {
-        node.x = xScale(node.year);
-        node.y = randomOffset(200); // Dispersion verticale
-        node.z = randomOffset(200); // Dispersion en profondeur
-      });
-
-      // Création du graphe 3D
-      const graph = ForceGraph3D()(elem)
-        .backgroundColor('#1c1919')
-        .graphData(data)
-        .nodeAutoColorBy('extension') // Couleur par type de fichier
-        .linkWidth(0.3)
-        .linkOpacity(0.8)
-        .forceEngine('d3')
-        .d3Force('charge').strength(-10) // Éviter superposition
-        .d3Force('center', null) // Désactiver la recentralisation
-        .d3Force('link', null) // Désactiver les liens
-        .d3Force('x', d3.forceX(d => xScale(d.year)).strength(0.1)) // Attirer sur l'axe X
-        .d3Force('y', d3.forceY(0).strength(0.005)) // Légère gravité vers Y=0
-        .d3Force('z', d3.forceZ(0).strength(0.005)); // Gravité sur Z aussi
-      
-      // Gestion du slider
-      slider.addEventListener('input', () => {
-        const percentage = parseInt(slider.value, 10);
-        percentageDisplay.textContent = `${percentage}%`;
+      function updateGraph() {
+        if (!fullGraph) return;
         
-        const numNodes = Math.floor((percentage / 100) * fullGraph.nodes.length);
-        const filteredNodes = fullGraph.nodes.slice(0, numNodes);
+        const sampleSize = slider.value / 100;
+        percentageDisplay.textContent = `${slider.value}%`;
+
+        const filteredNodes = fullGraph.nodes
+          .sort(() => 0.01 - Math.random())
+          .slice(0, Math.ceil(fullGraph.nodes.length * sampleSize));
+
         const filteredLinks = fullGraph.links.filter(link =>
           filteredNodes.some(node => node.id === link.source) &&
           filteredNodes.some(node => node.id === link.target)
         );
-        
-        console.log(`Affichage de ${filteredNodes.length} nœuds sur ${fullGraph.nodes.length}`);
+
+        filteredNodes.forEach(node => {
+          node.x = xScale(node.year);
+          node.y = randomOffset(200);
+          node.z = randomOffset(200);
+        });
+
         graph.graphData({ nodes: filteredNodes, links: filteredLinks });
-      });
+      }
 
-    };
-
-
-    slider.addEventListener('input', updateGraph);
-
+      updateGraph();
+      slider.addEventListener('input', updateGraph);
+    });
 </script>
-
-</body>
-
-</html>
