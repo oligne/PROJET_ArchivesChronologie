@@ -28,7 +28,7 @@ let graph = ForceGraph3D()(elem)
   .d3Force('y', d3.forceY(0).strength(0.01));  // Légère attraction vers Y = 0
   
 
-fetch('data.json')
+  fetch('./data.json') // Ajoute le './' pour être explicite
   .then(response => response.json())
   .then(data => {
     fullGraph = data;
