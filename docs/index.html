@@ -32,41 +32,6 @@ let graph = ForceGraph3D()(elem)
   .then(response => response.json())
   .then(data => {
     fullGraph = data;
-    const years = fullGraph.nodes.map(n => n.year).filter(y => y);
-    const xScale = d3.scaleLinear().domain([Math.min(...years), Math.max(...years)]).range([-500, 500]);
-    const randomOffset = (strength) => (Math.random() - 0.5) * strength;
-
-    function updateGraph() {
-      if (!fullGraph) return;
-
-      const sampleSize = slider.value / 100;
-      percentageDisplay.textContent = `${slider.value}%`;
-
-      const filteredNodes = fullGraph.nodes
-        .sort(() => 0.01 - Math.random())
-        .slice(0, Math.ceil(fullGraph.nodes.length * sampleSize));
-
-      const filteredLinks = fullGraph.links.filter(link =>
-        filteredNodes.some(node => node.id === link.source) &&
-        filteredNodes.some(node => node.id === link.target)
-      );
-
-      filteredNodes.forEach(node => {
-        node.x = xScale(node.year);
-        node.y = randomOffset(200);
-      });
-
-      graph.graphData({ nodes: filteredNodes, links: filteredLinks });
-    }
-
-    updateGraph();
-    slider.addEventListener('input', updateGraph);
-  });
-
-fetch('./data.json')
-  .then(response => response.json())
-  .then(data => {
-    fullGraph = data;
 
     // Extraire l'année depuis "Date de Creation"
     fullGraph.nodes.forEach(node => {
