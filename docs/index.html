@@ -35,7 +35,13 @@ fetch('./data.json') // Ajoute le './' pour être explicite
     // Extraire l'année depuis "Date de Creation"
     fullGraph.nodes.forEach(node => {
       if (node.attributes && node.attributes["Date de Creation"]) {
-        node.year = new Date(node.attributes["Date de Creation"]).getFullYear();
+        // Conversion explicite de la date pour être sûr
+        const date = new Date(node.attributes["Date de Creation"]);
+        if (!isNaN(date)) {
+          node.year = date.getFullYear();  // Extraire l'année
+        } else {
+          console.warn(`Date invalide pour le fichier ${node.id}: ${node.attributes["Date de Creation"]}`);
+        }
       }
     });
 
@@ -78,7 +84,6 @@ fetch('./data.json') // Ajoute le './' pour être explicite
       // Mettre à jour lors du changement du slider
       slider.addEventListener('input', updateGraph);
     }
-  });
-
-  
+  })
+  .catch(error => console.error("Erreur lors de la récupération du fichier JSON:", error));
 </script>
