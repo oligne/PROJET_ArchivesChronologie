@@ -63,4 +63,57 @@ let graph = ForceGraph3D()(elem)
     slider.addEventListener('input', updateGraph);
   });
 
+fetch('./data.json')
+  .then(response => response.json())
+  .then(data => {
+    fullGraph = data;
+
+    // Extraire l'année depuis "Date de Creation"
+    fullGraph.nodes.forEach(node => {
+      if (node.attributes && node.attributes["Date de Creation"]) {
+        node.year = new Date(node.attributes["Date de Creation"]).getFullYear();
+      }
+    });
+
+    const years = fullGraph.nodes
+      .map(n => n.year)
+      .filter(y => y !== undefined);
+
+    if (years.length > 0) {
+      const xScale = d3.scaleLinear()
+        .domain([Math.min(...years), Math.max(...years)])
+        .range([-500, 500]);
+
+      // Fonction pour mettre à jour le graphique en fonction du slider
+      function updateGraph() {
+        const sampleSize = slider.value / 100;
+        percentageDisplay.textContent = `${slider.value}%`;
+
+        const filteredNodes = fullGraph.nodes
+          .sort(() => 0.01 - Math.random()) // Mélanger les nœuds
+          .slice(0, Math.ceil(fullGraph.nodes.length * sampleSize)); // Appliquer le filtre selon le slider
+
+        const filteredLinks = fullGraph.links.filter(link =>
+          filteredNodes.some(node => node.id === link.source.id || node.id === link.source) &&
+          filteredNodes.some(node => node.id === link.target.id || node.id === link.target)
+        );
+
+        filteredNodes.forEach(node => {
+          if (node.year) {
+            node.x = xScale(node.year); // Positionner selon l'année
+          }
+          node.y = (Math.random() - 0.5) * 200; // Position Y aléatoire
+        });
+
+        graph.graphData({ nodes: filteredNodes, links: filteredLinks });
+      }
+
+      // Appeler la fonction initialement pour afficher les données
+      updateGraph();
+
+      // Mettre à jour lors du changement du slider
+      slider.addEventListener('input', updateGraph);
+    }
+  });
+
 </script>
