@@ -26,9 +26,8 @@ let graph = ForceGraph3D()(elem)
   .d3Force('link', d3.forceLink().id(d => d.id).strength(0.5))  // Stabilisation des liens
   .d3Force('x', d3.forceX(d => d.year ? d.year * 10 : 0).strength(0.3))  // Organisation en ligne
   .d3Force('y', d3.forceY(0).strength(0.01));  // Légère attraction vers Y = 0
-  
 
-  fetch('./data.json') // Ajoute le './' pour être explicite
+fetch('./data.json') // Ajoute le './' pour être explicite
   .then(response => response.json())
   .then(data => {
     fullGraph = data;
@@ -81,4 +80,5 @@ let graph = ForceGraph3D()(elem)
     }
   });
 
+  
 </script>
